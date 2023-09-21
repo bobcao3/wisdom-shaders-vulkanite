@@ -3,5 +3,5 @@
 *.rchit
 *.rahit
 *.rcall
-./src/bin
+bin/
 .vscode
