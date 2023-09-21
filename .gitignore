@@ -1,0 +1,7 @@
+*.rgen
+*.rmiss
+*.rchit
+*.rahit
+*.rcall
+./src/bin
+.vscode
