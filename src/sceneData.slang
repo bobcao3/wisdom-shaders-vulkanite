@@ -1,5 +1,5 @@
 struct EncodedVertex {
-    half4 position;
+    uint16_t4 position;
     uint8_t4 color;
     uint16_t2 block_texture;
     uint16_t2 light_texture;
@@ -24,24 +24,20 @@ struct EncodedQuad {
     EncodedVertex vertices[4];
 
     half4 getFragmentColor(half3 baryCoords, bool isSideA) {
-        const half div = half(1.0 / 255.0);
-        half4 c0 = half4(vertices[0].color) * div;
-        half4 c1 = half4(isSideA ? vertices[1].color : vertices[2].color) * div;
-        half4 c2 = half4(isSideA ? vertices[2].color : vertices[3].color) * div;
+        let div = half(1.0 / 255.0);
+        let c0 = half4(vertices[0].color) * div;
+        let c1 = half4(isSideA ? vertices[1].color : vertices[2].color) * div;
+        let c2 = half4(isSideA ? vertices[2].color : vertices[3].color) * div;
         return c0 * baryCoords.x + c1 * baryCoords.y + c2 * baryCoords.z;
     }
 
-    float3 getPositionLocal(float3 baryCoords, bool isSideA) {
-        float3 p0 = vertices[0].position.xyz;
-        float3 p1 = (isSideA ? vertices[1].position.xyz : vertices[2].position.xyz);
-        float3 p2 = (isSideA ? vertices[2].position.xyz : vertices[3].position.xyz);
-        return p0 * baryCoords.x + p1 * baryCoords.y + p2 * baryCoords.z;
-    }
-
-    float3 getPositionLocal(float2 baryCoords, uint primitiveIndex) {
-        bool isSideA = (primitiveIndex & 1) == 0;
-        float3 barys = float3(1.0 - baryCoords.x - baryCoords.y, baryCoords.x, baryCoords.y);
-        return getPositionLocal(barys, isSideA);
+    void getPositions(uint primitiveIndex, out float3 v0, out float3 v1, out float3 v2) {
+        let modelScale = 32.0 / 65536.0;
+        let modelOffset = -8.0;
+        let isSideA = (primitiveIndex & 1) == 0;
+        v0 = mad(modelScale, float3(vertices[0].position.xyz), modelOffset);
+        v1 = mad(modelScale, float3(isSideA ? vertices[1].position.xyz : vertices[2].position.xyz), modelOffset);
+        v2 = mad(modelScale, float3(isSideA ? vertices[2].position.xyz : vertices[3].position.xyz), modelOffset);
     }
 
     float2 getFragmentUV(float3 baryCoords, bool isSideA) {

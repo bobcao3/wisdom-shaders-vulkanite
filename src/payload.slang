@@ -1,6 +1,8 @@
 struct MaterialRayPayload {
+    float3 wldPos;
     float hitT;
-    float3 hitPos;
+    float3 wldNormal;
+    float wldErrOffset;
     uint geometryIndex;
     uint primitiveIndex;
     half2 barycentrics;

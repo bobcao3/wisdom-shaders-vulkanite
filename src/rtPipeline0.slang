@@ -1,29 +1,9 @@
 import bindings;
 import sceneData;
 import payload;
-
-[shader("miss")]
-void missMain(inout MaterialRayPayload payload) {
-    payload.hitT = -1.0;
-}
-
-[shader("closesthit")]
-void closesthitMain(inout MaterialRayPayload payload, in BuiltInTriangleIntersectionAttributes attr) {
-    payload.hitT = RayTCurrent();
-    payload.geometryIndex = InstanceID() + GeometryIndex();
-    payload.primitiveIndex = PrimitiveIndex();
-    payload.barycentrics = half2(attr.barycentrics);
-}
-
-[shader("anyhit")]
-void anyhitMain(inout MaterialRayPayload payload, in BuiltInTriangleIntersectionAttributes attr) {
-    let quad = gGeometries.getQuad(InstanceID() + GeometryIndex(), PrimitiveIndex());
-    let uv = quad.getFragmentUV(attr.barycentrics, PrimitiveIndex());
-    float alpha = gBlockAtlas.Sample(uv).a;
-    if (alpha < 0.05) {
-        IgnoreHit();
-    }
-}
+import random.random;
+import random.hybridTaus;
+import pathtracing.pathtracer;
 
 MaterialRayPayload traceMaterialRay(in RayDesc ray) {
     MaterialRayPayload primaryPayload = getMaterialRayPayload();
@@ -47,43 +27,26 @@ bool traceVisibilityRay(in RayDesc ray) {
 void raygenMain() {
     const uint2 launchIndex = DispatchRaysIndex().xy;
 
-    const float2 pixelPos = float2(launchIndex) + 0.5;
+    var rng = HybridTausGenerator(uint3(launchIndex, gCameraInfo.frameId) * 0x12345678);
+    rng.nextRand();
+
+    const float2 pixelPos = float2(launchIndex) + uniform2D(rng);
     const float2 screenPos = pixelPos / float2(DispatchRaysDimensions().xy);
     const float3 origin = transpose(gCameraInfo.viewInverse)[3].xyz;
     const float3 target = lerp(lerp(gCameraInfo.corners[0], gCameraInfo.corners[2], screenPos.y), lerp(gCameraInfo.corners[1], gCameraInfo.corners[3], screenPos.y), screenPos.x);
     const float3 direction = mul(gCameraInfo.viewInverse, float4(normalize(target.xyz), 0.0)).xyz;
 
-    RayDesc primaryRay;
-    primaryRay.Origin = origin;
-    primaryRay.Direction = direction;
-    primaryRay.TMin = 0.0001;
-    primaryRay.TMax = 4096.0;
-    let primaryPayload = traceMaterialRay(primaryRay);
+    var pt = BasicPathTracer(float3(1.0), origin, direction);
+    pt.setSun(normalize(mul(float3x3(gCameraInfo.viewInverse), gCameraInfo.sunPosition.xyz)), float3(1.0));
+    pt.setAmbient(float3(0.1));
 
-    float3 color = float3(0.0);
-
-    if (primaryPayload.hitT > 0.0) {
-        let quad = gGeometries.getQuad(primaryPayload.geometryIndex, primaryPayload.primitiveIndex);
-        let fragInfo = quad.getFragmentInfo(primaryPayload.barycentrics, primaryPayload.primitiveIndex);
-        float3 albedo = gBlockAtlas.Sample(fragInfo.uv).rgb * fragInfo.color.rgb;
-        float3 hitPos = origin + direction * primaryPayload.hitT;
-
-        let sunDir = normalize(gCameraInfo.sunPosition.xyz);
-        RayDesc shadowRay;
-        shadowRay.Origin = hitPos;
-        shadowRay.Direction = sunDir;
-        shadowRay.TMin = 0.0001;
-        shadowRay.TMax = 4096.0;
-        bool shadowed = traceVisibilityRay(shadowRay);
-
-        color = shadowed ? albedo * 0.3 : albedo;
-    } else {
-        color = float3(0.5, 0.7, 1.0);
+    for (int i = 0; i < 4; i++) {
+        if (!pt.nextPathSegment(rng)) {
+            break;
+        }
     }
 
-    if (any(isnan(color))) {
-        color = float3(1.0, 0.0, 1.0);
-    }
+    float3 color = pt.integratePath();
 
     gOutImage[launchIndex] = float4(color, 1.0);
 }

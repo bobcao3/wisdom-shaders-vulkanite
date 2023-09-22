@@ -8,10 +8,16 @@ ConstantBuffer<CameraInfo> gCameraInfo;
 RaytracingAccelerationStructure gAccelerationStructure;
 
 [[vk::binding(3)]]
-RWTexture2D gOutImage;
+Sampler2D gBlockAtlas;
 
 [[vk::binding(4)]]
-Sampler2D gBlockAtlas;
+Sampler2D gBlockAtlasNormal;
+
+[[vk::binding(5)]]
+Sampler2D gBlockAtlasSpecular;
+
+[[vk::binding(6)]]
+RWTexture2D gOutImage;
 
 [[vk::binding(0, 1)]]
 struct Geometries {
