@@ -43,6 +43,17 @@ void raygenMain() {
         if (!pt.nextPathSegment(rng)) {
             break;
         }
+        if (i > 0) {
+            // Russian roulette
+            float3 t = pt.getCurrentThroughput();
+            float p = max(t.x, max(t.y, t.z));
+
+            if (rng.nextRand() > p) {
+                break;
+            } else {
+                pt.adjustThroughput(float3(1.0 / p));
+            }
+        }
     }
 
     float3 color = pt.integratePath();

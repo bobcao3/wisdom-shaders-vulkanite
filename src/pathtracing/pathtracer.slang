@@ -8,6 +8,10 @@ interface IPathTracer {
     // Returns the current throughput of the path
     float3 getCurrentThroughput();
 
+    // Adjusts the throughput of the path (e.g. for russian roulette)
+    [[mutating]]
+    void adjustThroughput(float3 adjustment);
+
     // Returns current ray depth
     uint getCurrentDepth();
 
@@ -61,6 +65,11 @@ struct BasicPathTracer : IPathTracer {
 
     float3 getCurrentThroughput() {
         return throughput;
+    }
+
+    [[mutating]]
+    void adjustThroughput(float3 adjustment) {
+        throughput *= adjustment;
     }
 
     uint getCurrentDepth() {
