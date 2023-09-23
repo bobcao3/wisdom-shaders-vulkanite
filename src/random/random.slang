@@ -27,8 +27,8 @@ float3 orientedCosineHemisphere<T : IRandomNumberGenerator>(T rng, float3 n, out
     let b = sqrt(1.0 - a * a);
     let phi = 2.0 * PI * u.y;
     let x = n.x + b * cos(phi);
-    let y = n.y + b * sin(phi);
-    let z = n.z + a;
+    let y = n.y + a;
+    let z = n.z + b * sin(phi);
     pdf = a / PI;
     return normalize(float3(x, y, z));
 }
