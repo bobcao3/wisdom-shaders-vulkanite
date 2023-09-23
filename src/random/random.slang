@@ -5,25 +5,25 @@ interface IRandomNumberGenerator {
     float nextRand();
 }
 
-int randomInt<T : IRandomNumberGenerator>(T rng, int min, int max) {
+int randomInt<T : IRandomNumberGenerator>(inout T rng, int min, int max) {
     return min + (int)(rng.nextRand() * (max - min));
 }
 
-float randomFloat<T : IRandomNumberGenerator>(T rng, float min, float max) {
+float randomFloat<T : IRandomNumberGenerator>(inout T rng, float min, float max) {
     return min + rng.nextRand() * (max - min);
 }
 
-float2 uniform2D<T : IRandomNumberGenerator>(T rng) {
+float2 uniform2D<T : IRandomNumberGenerator>(inout T rng) {
     return float2(rng.nextRand(), rng.nextRand());
 }
 
-float3 uniform3D<T : IRandomNumberGenerator>(T rng) {
+float3 uniform3D<T : IRandomNumberGenerator>(inout T rng) {
     return float3(rng.nextRand(), rng.nextRand(), rng.nextRand());
 }
 
-float3 orientedCosineHemisphere<T : IRandomNumberGenerator>(T rng, float3 n, out float pdf) {
-    float2 u = uniform2D(rng);
-    let a = 1.0 - u.x;
+float3 orientedCosineHemisphere<T : IRandomNumberGenerator>(inout T rng, float3 n, out float pdf) {
+    float2 u = uniform2D(rng) * (1.0f - 1e-5f);
+    let a = 1.0 - 2.0 * u.x;
     let b = sqrt(1.0 - a * a);
     let phi = 2.0 * PI * u.y;
     let x = n.x + b * cos(phi);

@@ -18,7 +18,7 @@ interface IPathTracer {
     // Advances the pathtracer to the next path segment.
     // Returns false if the path has terminated.
     [[mutating]]
-    bool nextPathSegment<RngT : IRandomNumberGenerator>(RngT rng);
+    bool nextPathSegment<RngT : IRandomNumberGenerator>(inout RngT rng);
 }
 
 import payload;
@@ -91,7 +91,7 @@ struct BasicPathTracer : IPathTracer {
     }
 
     [[mutating]]
-    bool nextPathSegment<RngT : IRandomNumberGenerator>(RngT rng) {
+    bool nextPathSegment<RngT : IRandomNumberGenerator>(inout RngT rng) {
         RayDesc ray;
         ray.Origin = position;
         ray.Direction = direction;

@@ -27,8 +27,7 @@ bool traceVisibilityRay(in RayDesc ray) {
 void raygenMain() {
     const uint2 launchIndex = DispatchRaysIndex().xy;
 
-    var rng = HybridTausGenerator(uint3(launchIndex, gCameraInfo.frameId) * 0x12345678);
-    rng.nextRand();
+    var rng = HybridTausGenerator(uint3(launchIndex, gCameraInfo.frameId) * uint3(3733, 9649, 21157));
 
     const float2 pixelPos = float2(launchIndex) + uniform2D(rng);
     const float2 screenPos = pixelPos / float2(DispatchRaysDimensions().xy);
