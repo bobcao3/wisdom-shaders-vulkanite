@@ -58,5 +58,24 @@ void raygenMain() {
 
     float3 color = pt.integratePath();
 
+    // Debug
+    if (false) {
+        RayDesc ray;
+        ray.Origin = origin;
+        ray.Direction = direction;
+        ray.TMin = 0.0f;
+        ray.TMax = 100000.0f;
+
+        MaterialRayPayload payload = traceMaterialRay(ray);
+
+        let hitQuad = gGeometries.getQuad(payload.geometryIndex, payload.primitiveIndex);
+        let hitFragInfo = hitQuad.getFragmentInfo(payload.barycentrics, payload.primitiveIndex);
+
+        let normalData = gBlockAtlasNormal.Sample(hitFragInfo.uv);
+        let specularData = gBlockAtlasSpecular.Sample(hitFragInfo.uv);
+
+        color = specularData.rgb;
+    }
+
     gOutImage[launchIndex] = float4(color, 1.0);
 }

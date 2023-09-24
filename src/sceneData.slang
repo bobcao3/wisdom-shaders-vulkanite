@@ -26,8 +26,8 @@ struct EncodedQuad {
     half4 getFragmentColor(half3 baryCoords, bool isSideA) {
         let div = half(1.0 / 255.0);
         let c0 = half4(vertices[0].color) * div;
-        let c1 = half4(isSideA ? vertices[1].color : vertices[2].color) * div;
-        let c2 = half4(isSideA ? vertices[2].color : vertices[3].color) * div;
+        let c1 = half4(vertices[isSideA ? 1 : 2].color) * div;
+        let c2 = half4(vertices[isSideA ? 2 : 3].color) * div;
         return c0 * baryCoords.x + c1 * baryCoords.y + c2 * baryCoords.z;
     }
 
@@ -36,14 +36,14 @@ struct EncodedQuad {
         let modelOffset = -8.0;
         let isSideA = (primitiveIndex & 1) == 0;
         v0 = mad(modelScale, float3(vertices[0].position.xyz), modelOffset);
-        v1 = mad(modelScale, float3(isSideA ? vertices[1].position.xyz : vertices[2].position.xyz), modelOffset);
-        v2 = mad(modelScale, float3(isSideA ? vertices[2].position.xyz : vertices[3].position.xyz), modelOffset);
+        v1 = mad(modelScale, float3(vertices[isSideA ? 1 : 2].position.xyz), modelOffset);
+        v2 = mad(modelScale, float3(vertices[isSideA ? 2 : 3].position.xyz), modelOffset);
     }
 
     float2 getFragmentUV(float3 baryCoords, bool isSideA) {
         float2 t0 = (vertices[0].block_texture) / 65536.0;
-        float2 t1 = (isSideA ? vertices[1].block_texture : vertices[2].block_texture) / 65536.0;
-        float2 t2 = (isSideA ? vertices[2].block_texture : vertices[3].block_texture) / 65536.0;
+        float2 t1 = (vertices[isSideA ? 1 : 2].block_texture) / 65536.0;
+        float2 t2 = (vertices[isSideA ? 2 : 3].block_texture) / 65536.0;
         return t0 * baryCoords.x + t1 * baryCoords.y + t2 * baryCoords.z;
     }
 

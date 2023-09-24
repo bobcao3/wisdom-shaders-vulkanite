@@ -1,5 +1,6 @@
 import bsdf;
 import random.random;
+import math;
 
 interface IPathTracer {
     // Setup the pathtracer
@@ -127,12 +128,17 @@ struct BasicPathTracer : IPathTracer {
         let specularData = gBlockAtlasSpecular.Sample(hitFragInfo.uv);
         let emmisivityFactor = specularData.w == 1.0 ? 0.0 : specularData.w * (255.0f / 254.0f);
 
+        let normalStrength = 0.5;
+        let t2w = float3x3(hitFragInfo.tangent, hitFragInfo.bitangent, hitFragInfo.normal);
+        let normalTexData = gBlockAtlasNormal.Sample(hitFragInfo.uv);
+        let hitMaterialNormal = lerp(hitFragInfo.normal, mul(mad(normalTexData.xyz, 2.0, -1.0), t2w), normalStrength);
+
         let hitMaterial = LambertianBSDF(albedo);
 
         // Sample BSDF
         float bsdfSamplePdf;
         float3 wi;
-        let bsdfSample = hitMaterial.sample(rng, hitFragInfo.normal, direction, bsdfSamplePdf, wi);
+        let bsdfSample = hitMaterial.sample(rng, hitMaterialNormal, direction, bsdfSamplePdf, wi);
         let wo = -direction;
 
         // Update throughput
@@ -149,8 +155,8 @@ struct BasicPathTracer : IPathTracer {
             bool shadowed = traceVisibilityRay(shadowRay);
 
             if (!shadowed) {
-                let bsdfEval = hitMaterial.evaluate(hitFragInfo.normal, wo, sunDirection);
-                let NdotL = abs(dot(hitFragInfo.normal, sunDirection));
+                let bsdfEval = hitMaterial.evaluate(hitMaterialNormal, wo, sunDirection);
+                let NdotL = abs(dot(hitMaterialNormal, sunDirection));
                 contribution += throughput * sunRadiance * bsdfEval * NdotL;
             }
         }
