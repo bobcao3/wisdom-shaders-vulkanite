@@ -1,5 +1,5 @@
 import uniforms;
-import sceneData;
+import scene.geomData;
 
 [[vk::binding(0)]]
 ConstantBuffer<CameraInfo> gCameraInfo;

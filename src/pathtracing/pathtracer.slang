@@ -1,6 +1,8 @@
 import bsdf;
 import random.random;
+import random.weightedRIS;
 import math;
+import scene.scene;
 
 interface IPathTracer {
     // Setup the pathtracer
@@ -29,18 +31,14 @@ interface IPathTracer {
 import payload;
 import bindings;
 
-struct BasicPathTracer : IPathTracer {
+struct BasicPathTracer<Scene : IScene> : IPathTracer {
     uint depth;
     float3 throughput;
     float3 position;
     float3 direction;
     float3 contribution;
 
-    float3 sunDirection;
-    float3 sunRadiance;
-    float sunCosThetaMax;
-
-    float3 ambientRadiance;
+    Scene scene;
 
     __init(float3 initialThroughput, float3 position, float3 direction) {
         depth = 0;
@@ -48,22 +46,11 @@ struct BasicPathTracer : IPathTracer {
         this.position = position;
         this.direction = direction;
         contribution = float3(0.0f);
-
-        this.sunDirection = float3(0.0, 1.0, 0.0);
-        this.sunRadiance = float3(0.0);
-        this.ambientRadiance = float3(0.0);
     }
 
     [[mutating]]
-    void setSun(float3 sunDirection, float3 sunRadiance, float sunAngularRadius) {
-        this.sunDirection = sunDirection;
-        this.sunRadiance = sunRadiance;
-        this.sunCosThetaMax = cos(sunAngularRadius);
-    }
-
-    [[mutating]]
-    void setAmbient(float3 ambientRadiance) {
-        this.ambientRadiance = ambientRadiance;
+    void setScene(Scene scene) {
+        this.scene = scene;
     }
 
     float3 getCurrentThroughput() {
@@ -113,7 +100,7 @@ struct BasicPathTracer : IPathTracer {
         MaterialRayPayload payload = traceMaterialRay(ray);
 
         if (payload.hitT < 0.0) {
-            contribution += throughput * ambientRadiance;
+            contribution += throughput * scene.getDomeRadiance(direction);
 
             // Miss
             return false;
@@ -124,52 +111,49 @@ struct BasicPathTracer : IPathTracer {
         precise let hitGeomNormal = payload.wldNormal;
         precise let hitGeomError = payload.wldErrOffset;
 
-        let hitQuad = gGeometries.getQuad(payload.geometryIndex, payload.primitiveIndex);
-        let hitFragInfo = hitQuad.getFragmentInfo(payload.barycentrics, payload.primitiveIndex);
-        let albedo = hitFragInfo.color.xyz * gBlockAtlas.Sample(hitFragInfo.uv).xyz;
-        let specularData = gBlockAtlasSpecular.Sample(hitFragInfo.uv);
-        let emmisivityFactor = specularData.w == 1.0 ? 0.0 : specularData.w * (255.0f / 254.0f);
-
-        let normalStrength = 0.5;
-        let t2w = float3x3(hitFragInfo.tangent, hitFragInfo.bitangent, hitFragInfo.normal);
-        let normalTexData = gBlockAtlasNormal.Sample(hitFragInfo.uv);
-        let hitMaterialNormal = normalize(lerp(hitFragInfo.normal, mul(mad(normalTexData.xyz, 2.0, -1.0), t2w), normalStrength));
-
-        let roughness = pow(1.0 - specularData.x, 2.0);
-        let f0 = float3(specularData.y);
-        let metalness = specularData.y > (229.0 / 255.0) ? 1.0 : 0.0;
-        let hitMaterial = NormalFlipBSDF<MixBSDF<GGXSchlickBSDF, DisneyDiffuseBSDf>>(
-            MixBSDF<GGXSchlickBSDF, DisneyDiffuseBSDf>(
-                metalness,
-                GGXSchlickBSDF(albedo, f0, roughness),
-                DisneyDiffuseBSDf(albedo, roughness)
-            )
-        );
-        // let hitMaterial = LambertianBSDF(albedo);
+        float3 hitMaterialNormal;
+        float3 hitMaterialEmission;
+        let hitMaterial = scene.getHitMaterial(payload, hitMaterialNormal, hitMaterialEmission);
 
         position = mad(hitGeomError, hitGeomNormal, hitPosition);
         let wo = -direction;
 
         // Add contribution of this vertex
+        // Importance sample directional light using WRIS
         {
-            // Sunlight
-            let sampledLightWi = orientedCone(rng, sunDirection, sunCosThetaMax);
+            float3 lightBsdf;
+            float3 lightRadiance;
+            float3 lightWi;
+
+            WeightedReservior R;
+            for (int i = 0; i < scene.getNDirLights(); i++) {
+                let light = scene.getDirLight(i);
+                float3 sampledWi;
+                let sampledRadiance = light.sample(rng, position, sampledWi);
+                let sampledBsdf = hitMaterial.evaluate(hitMaterialNormal, hitGeomNormal, sampledWi, wo);
+                let weight = luminance(sampledBsdf * sampledRadiance);
+
+                if (R.add(rng, weight)) {
+                    lightWi = sampledWi;
+                    lightBsdf = sampledBsdf;
+                    lightRadiance = sampledRadiance;
+                }
+            }
+
+            // Check visibility
             RayDesc shadowRay;
             shadowRay.Origin = position;
-            shadowRay.Direction = sampledLightWi;
+            shadowRay.Direction = lightWi;
             shadowRay.TMin = 0.0;
             shadowRay.TMax = 100000.0f;
             bool shadowed = traceVisibilityRay(shadowRay);
 
             if (!shadowed) {
-                let bsdfEval = hitMaterial.evaluate(hitMaterialNormal, hitGeomNormal, sampledLightWi, wo);
-                contribution += throughput * sunRadiance * bsdfEval;
+                contribution += throughput * lightBsdf * lightRadiance / R.getProb();
             }
         }
-        if (emmisivityFactor > 0.0) {
-            // Emissive
-            contribution += throughput * (emmisivityFactor * albedo);
-        }
+        // Emissive
+        contribution += throughput * hitMaterialEmission;
 
         // Sample BSDF for next direction
         float bsdfSamplePdf;

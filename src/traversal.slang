@@ -1,5 +1,5 @@
 import bindings;
-import sceneData;
+import scene.geomData;
 import payload;
 
 [shader("miss")]
