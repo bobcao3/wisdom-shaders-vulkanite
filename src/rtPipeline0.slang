@@ -1,5 +1,6 @@
 import bindings;
 import sceneData;
+import math;
 import payload;
 import random.random;
 import random.hybridTaus;
@@ -36,8 +37,8 @@ void raygenMain() {
     const float3 direction = mul(gCameraInfo.viewInverse, float4(normalize(target.xyz), 0.0)).xyz;
 
     var pt = BasicPathTracer(float3(1.0), origin, direction);
-    pt.setSun(normalize(mul(float3x3(gCameraInfo.viewInverse), gCameraInfo.sunPosition.xyz)), float3(1.0));
-    pt.setAmbient(float3(0.1));
+    pt.setSun(normalize(mul(float3x3(gCameraInfo.viewInverse), gCameraInfo.sunPosition.xyz)), float3(1.0), toRad(0.53));
+    pt.setAmbient(float3(0.02));
 
     for (int i = 0; i < 4; i++) {
         if (!pt.nextPathSegment(rng)) {
@@ -74,7 +75,7 @@ void raygenMain() {
         let normalData = gBlockAtlasNormal.Sample(hitFragInfo.uv);
         let specularData = gBlockAtlasSpecular.Sample(hitFragInfo.uv);
 
-        color = specularData.rgb;
+        color = normalData.rgb;
     }
 
     gOutImage[launchIndex] = float4(color, 1.0);

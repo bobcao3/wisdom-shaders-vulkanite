@@ -38,6 +38,7 @@ struct BasicPathTracer : IPathTracer {
 
     float3 sunDirection;
     float3 sunRadiance;
+    float sunCosThetaMax;
 
     float3 ambientRadiance;
 
@@ -54,9 +55,10 @@ struct BasicPathTracer : IPathTracer {
     }
 
     [[mutating]]
-    void setSun(float3 sunDirection, float3 sunRadiance) {
+    void setSun(float3 sunDirection, float3 sunRadiance, float sunAngularRadius) {
         this.sunDirection = sunDirection;
         this.sunRadiance = sunRadiance;
+        this.sunCosThetaMax = cos(sunAngularRadius);
     }
 
     [[mutating]]
@@ -131,43 +133,52 @@ struct BasicPathTracer : IPathTracer {
         let normalStrength = 0.5;
         let t2w = float3x3(hitFragInfo.tangent, hitFragInfo.bitangent, hitFragInfo.normal);
         let normalTexData = gBlockAtlasNormal.Sample(hitFragInfo.uv);
-        let hitMaterialNormal = lerp(hitFragInfo.normal, mul(mad(normalTexData.xyz, 2.0, -1.0), t2w), normalStrength);
+        let hitMaterialNormal = normalize(lerp(hitFragInfo.normal, mul(mad(normalTexData.xyz, 2.0, -1.0), t2w), normalStrength));
 
-        let hitMaterial = LambertianBSDF(albedo);
+        let roughness = pow(1.0 - specularData.x, 2.0);
+        let f0 = float3(specularData.y);
+        let metalness = specularData.y > (229.0 / 255.0) ? 1.0 : 0.0;
+        let hitMaterial = NormalFlipBSDF<MixBSDF<GGXSchlickBSDF, DisneyDiffuseBSDf>>(
+            MixBSDF<GGXSchlickBSDF, DisneyDiffuseBSDf>(
+                metalness,
+                GGXSchlickBSDF(albedo, f0, roughness),
+                DisneyDiffuseBSDf(albedo, roughness)
+            )
+        );
+        // let hitMaterial = LambertianBSDF(albedo);
 
-        // Sample BSDF
-        float bsdfSamplePdf;
-        float3 wi;
-        let bsdfSample = hitMaterial.sample(rng, hitMaterialNormal, direction, bsdfSamplePdf, wi);
+        position = mad(hitGeomError, hitGeomNormal, hitPosition);
         let wo = -direction;
 
-        // Update throughput
-        throughput *= bsdfSample; // Importance sampled. No need to divide by pdf.
-
-        // Update contribution
+        // Add contribution of this vertex
         {
             // Sunlight
+            let sampledLightWi = orientedCone(rng, sunDirection, sunCosThetaMax);
             RayDesc shadowRay;
-            shadowRay.Origin = mad(hitGeomError, hitGeomNormal, hitPosition);
-            shadowRay.Direction = sunDirection;
+            shadowRay.Origin = position;
+            shadowRay.Direction = sampledLightWi;
             shadowRay.TMin = 0.0;
             shadowRay.TMax = 100000.0f;
             bool shadowed = traceVisibilityRay(shadowRay);
 
             if (!shadowed) {
-                let bsdfEval = hitMaterial.evaluate(hitMaterialNormal, wo, sunDirection);
-                let NdotL = abs(dot(hitMaterialNormal, sunDirection));
-                contribution += throughput * sunRadiance * bsdfEval * NdotL;
+                let bsdfEval = hitMaterial.evaluate(hitMaterialNormal, hitGeomNormal, sampledLightWi, wo);
+                contribution += throughput * sunRadiance * bsdfEval;
             }
         }
         if (emmisivityFactor > 0.0) {
             // Emissive
-            contribution += throughput * emmisivityFactor * albedo;
+            contribution += throughput * (emmisivityFactor * albedo);
         }
 
-        // Update path state
-        position = mad(hitGeomError, hitGeomNormal, hitPosition);
+        // Sample BSDF for next direction
+        float bsdfSamplePdf;
+        float3 wi;
+        hitMaterial.sample(rng, hitMaterialNormal, hitGeomNormal, wo, bsdfSamplePdf, wi);
         direction = wi;
+
+        // Update throughput for next vertex
+        throughput *= hitMaterial.evaluate(hitMaterialNormal, hitGeomNormal, wi, wo) / bsdfSamplePdf;
 
         return true;
     }
