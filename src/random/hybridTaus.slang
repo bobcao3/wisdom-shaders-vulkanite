@@ -3,11 +3,11 @@ import random;
 struct HybridTausGenerator : IRandomNumberGenerator {
     uint z1, z2, z3, z4;
 
-    __init(uint3 seed) {
+    __init(uint4 seed) {
         z1 = seed.x;
         z2 = seed.y;
         z3 = seed.z;
-        z4 = seed.z;
+        z4 = seed.w;
     }
 
     static uint LCGStep(inout uint z, uint A, uint C) {

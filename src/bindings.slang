@@ -27,3 +27,6 @@ struct Geometries {
         return gQuadBuffers[NonUniformResourceIndex(sectionIndex)][primId >> 1];
     }
 } gGeometries;
+
+[[vk::binding(0, 2)]]
+Sampler3D gBlueNoise;
