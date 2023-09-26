@@ -4,6 +4,7 @@ import math;
 import payload;
 import random.random;
 import random.hybridTaus;
+import random.halton;
 import pathtracing.pathtracer;
 
 MaterialRayPayload traceMaterialRay(in RayDesc ray) {
@@ -31,8 +32,9 @@ void raygenMain() {
     let blueNoise3D = gBlueNoise.Load(int4(launchIndex & int2(127, 127), gCameraInfo.frameId & 63, 0)).rgb;
     let seed = uint4(uint3(blueNoise3D * 65536), gCameraInfo.frameId * 21157 + launchIndex.x * 1973 + launchIndex.y * 1013);
     var rng = HybridTausGenerator(seed);
+    // var rng = HaltonRNG((uint3(blueNoise3D) << 16) + gCameraInfo.frameId * 256);
 
-    const float2 pixelPos = float2(launchIndex) + uniform2D(rng);
+    const float2 pixelPos = float2(launchIndex) + rng.nextRand2D();
     const float2 screenPos = pixelPos / float2(DispatchRaysDimensions().xy);
     const float3 origin = transpose(gCameraInfo.viewInverse)[3].xyz;
     const float3 target = lerp(lerp(gCameraInfo.corners[0], gCameraInfo.corners[2], screenPos.y), lerp(gCameraInfo.corners[1], gCameraInfo.corners[3], screenPos.y), screenPos.x);
@@ -40,6 +42,12 @@ void raygenMain() {
 
     var pt = BasicPathTracer<PBRMinecraftScene>(float3(1.0), origin, direction);
     pt.setScene(PBRMinecraftScene());
+
+    // var pt = BasicPathTracer<VanillaMinecraftWorld>(float3(1.0), origin, direction);
+    // pt.setScene(VanillaMinecraftWorld());
+
+    // var pt = BasicPathTracer<LambertGrayWorld>(float3(1.0), origin, direction);
+    // pt.setScene(LambertGrayWorld(float3(0.5)));
 
     for (int i = 0; i < 4; i++) {
         if (!pt.nextPathSegment(rng)) {
@@ -76,7 +84,8 @@ void raygenMain() {
         let normalData = gBlockAtlasNormal.Sample(hitFragInfo.uv);
         let specularData = gBlockAtlasSpecular.Sample(hitFragInfo.uv);
 
-        color = normalData.rgb;
+        let lightLevel = hitFragInfo.lightUV.r;
+        color = float3(step(50.0, lightLevel), step(240.0, lightLevel), step(254.0, lightLevel));
     }
 
     gOutImage[launchIndex] = float4(color, 1.0);

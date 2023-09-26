@@ -3,6 +3,12 @@ import math;
 interface IRandomNumberGenerator {
     [mutating]
     float nextRand();
+
+    [mutating]
+    float2 nextRand2D();
+
+    [mutating]
+    float3 nextRand3D();
 }
 
 int randomInt<T : IRandomNumberGenerator>(inout T rng, int min, int max) {
@@ -13,16 +19,8 @@ float randomFloat<T : IRandomNumberGenerator>(inout T rng, float min, float max)
     return min + rng.nextRand() * (max - min);
 }
 
-float2 uniform2D<T : IRandomNumberGenerator>(inout T rng) {
-    return float2(rng.nextRand(), rng.nextRand());
-}
-
-float3 uniform3D<T : IRandomNumberGenerator>(inout T rng) {
-    return float3(rng.nextRand(), rng.nextRand(), rng.nextRand());
-}
-
 float3 orientedCosineHemisphere<T : IRandomNumberGenerator>(inout T rng, float3 n) {
-    float2 u = uniform2D(rng) * (1.0f - 1e-5f);
+    float2 u = rng.nextRand2D() * (1.0f - 1e-5f);
     let a = 1.0 - 2.0 * u.x;
     let b = sqrt(1.0 - a * a);
     let phi = 2.0 * PI * u.y;
@@ -37,7 +35,7 @@ float orientedCosineHemispherePdf(float3 n, float3 d) {
 }
 
 float3 randomCone<T : IRandomNumberGenerator>(inout T rng, float cosThetaMax) {
-    float2 u = uniform2D(rng);
+    float2 u = rng.nextRand2D();
     let cosTheta = (1.0 - u.x) + u.x * cosThetaMax;
     let sinTheta = sqrt(1.0 - cosTheta * cosTheta);
     let phi = 2.0 * PI * u.y;

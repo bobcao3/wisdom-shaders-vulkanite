@@ -18,6 +18,7 @@ struct FragmentInfo {
     float3 tangent;
     float3 bitangent;
     half4 color;
+    half2 lightUV;
 };
 
 struct EncodedQuad {
@@ -47,6 +48,14 @@ struct EncodedQuad {
         return t0 * baryCoords.x + t1 * baryCoords.y + t2 * baryCoords.z;
     }
 
+    half2 getFragmentLightMap(half3 baryCoords, bool isSideA) {
+        half div = half(1.0);// / 65536.0);
+        half2 t0 = half2(vertices[0].light_texture) * div;
+        half2 t1 = half2(vertices[isSideA ? 1 : 2].light_texture) * div;
+        half2 t2 = half2(vertices[isSideA ? 2 : 3].light_texture) * div;
+        return t0 * baryCoords.x + t1 * baryCoords.y + t2 * baryCoords.z;
+    }
+
     float2 getFragmentUV(float2 baryCoords, uint primitiveIndex) {
         bool isSideA = (primitiveIndex & 1) == 0;
         float3 barys = float3(1.0 - baryCoords.x - baryCoords.y, baryCoords.x, baryCoords.y);
@@ -63,6 +72,7 @@ struct EncodedQuad {
         info.tangent = vertices[0].tangent.xyz / 128.0;
         info.bitangent = cross(info.tangent, info.normal) * (vertices[0].tangent.w / 128.0);
         info.color = getFragmentColor(half3(barys), isSideA);
+        info.lightUV = getFragmentLightMap(half3(barys), isSideA);
         return info;
     }
 };

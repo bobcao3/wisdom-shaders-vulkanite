@@ -29,4 +29,14 @@ struct HybridTausGenerator : IRandomNumberGenerator {
             LCGStep(z4, 1664525, 1013904223UL)        // p4=2^32
         );
     }
+
+    [mutating]
+    float2 nextRand2D() {
+        return float2(nextRand(), nextRand());
+    }
+
+    [mutating]
+    float3 nextRand3D() {
+        return float3(nextRand(), nextRand(), nextRand());
+    }
 }

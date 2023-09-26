@@ -98,7 +98,7 @@ struct GGXSchlickBSDF : IBsdf {
     //      pdf = D * NdotH / (4 * HdotV)
     float3 getGGXMicrofacet<T : IRandomNumberGenerator>(inout T rng, float3 n, float3 nGeom, float3 wo) {
         // Get our uniform random numbers
-        float2 randVal = uniform2D(rng);
+        float2 randVal = rng.nextRand2D();
 
         // Get an orthonormal basis from the normal
         float3 B = getPerpendicularVector(n);

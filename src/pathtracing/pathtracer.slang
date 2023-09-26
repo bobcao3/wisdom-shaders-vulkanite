@@ -107,7 +107,8 @@ struct BasicPathTracer<Scene : IScene> : IPathTracer {
         }
 
         // Hit
-        precise let hitPosition = payload.wldPos;
+        bool useGeomPosition = distance(payload.wldPos, position) < (payload.hitT + payload.wldErrOffset * 2);
+        precise let hitPosition = useGeomPosition ? payload.wldPos : (position + direction * payload.hitT);
         precise let hitGeomNormal = payload.wldNormal;
         precise let hitGeomError = payload.wldErrOffset;
 
@@ -120,7 +121,7 @@ struct BasicPathTracer<Scene : IScene> : IPathTracer {
 
         // Add contribution of this vertex
         // Importance sample directional light using WRIS
-        {
+        if (scene.getNDirLights() > 0) {
             float3 lightBsdf;
             float3 lightRadiance;
             float3 lightWi;
@@ -149,7 +150,7 @@ struct BasicPathTracer<Scene : IScene> : IPathTracer {
             bool shadowed = traceVisibilityRay(shadowRay);
 
             if (!shadowed) {
-                contribution += throughput * lightBsdf * lightRadiance / R.getProb();
+                contribution += max(nanToNum(throughput * lightBsdf * lightRadiance / R.getProb()), 0.0);
             }
         }
         // Emissive
@@ -162,7 +163,7 @@ struct BasicPathTracer<Scene : IScene> : IPathTracer {
         direction = wi;
 
         // Update throughput for next vertex
-        throughput *= hitMaterial.evaluate(hitMaterialNormal, hitGeomNormal, wi, wo) / bsdfSamplePdf;
+        throughput = max(nanToNum(throughput * hitMaterial.evaluate(hitMaterialNormal, hitGeomNormal, wi, wo) / bsdfSamplePdf), 0.0);
 
         return true;
     }
