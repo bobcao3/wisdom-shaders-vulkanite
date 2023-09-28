@@ -5,3 +5,4 @@
 *.rcall
 bin/
 .vscode
+*.zip
