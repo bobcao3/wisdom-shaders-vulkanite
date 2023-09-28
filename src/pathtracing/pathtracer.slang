@@ -107,7 +107,7 @@ struct BasicPathTracer<Scene : IScene> : IPathTracer {
         }
 
         // Hit
-        bool useGeomPosition = distance(payload.wldPos, position) < (payload.hitT + payload.wldErrOffset * 2);
+        const bool useGeomPosition = true;// distance(payload.wldPos, position) < (payload.hitT + payload.wldErrOffset * 2);
         precise let hitPosition = useGeomPosition ? payload.wldPos : (position + direction * payload.hitT);
         precise let hitGeomNormal = payload.wldNormal;
         precise let hitGeomError = payload.wldErrOffset;

@@ -50,6 +50,7 @@ def main():
         compile_ahit(SLANGC, SRC_PATH / "traversal.slang", OUT_PATH / "ray0_0.rahit")
         compile_chit(SLANGC, SRC_PATH / "traversal.slang", OUT_PATH / "ray0_0.rchit")
     except subprocess.CalledProcessError as e:
+        print(e)
         exit(1)
 
 if __name__ == '__main__':
