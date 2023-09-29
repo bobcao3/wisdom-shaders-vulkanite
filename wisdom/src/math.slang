@@ -34,6 +34,14 @@ float nanToZero(float x) {
     return isnan(x) ? 0.0 : x;
 }
 
-func nanToZero<T : vector>(T x) -> T {
-    return isnan(x) ? 0.0 : x;
+float2 nanToZero(float2 x) {
+    return select(isnan(x), 0.0, x);
+}
+
+float3 nanToZero(float3 x) {
+    return select(isnan(x), 0.0, x);
+}
+
+float4 nanToZero(float4 x) {
+    return select(isnan(x), 0.0, x);
 }

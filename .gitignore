@@ -3,6 +3,5 @@
 *.rchit
 *.rahit
 *.rcall
-bin/
 .vscode
 *.zip

@@ -5,8 +5,10 @@ import math;
 import scene.scene;
 
 interface IPathTracer {
+    associatedtype Scene : IScene;
+
     // Setup the pathtracer
-    __init(float3 initialThroughput, float3 position, float3 direction);
+    __init(float3 initialThroughput, float3 position, float3 direction, Scene scene);
 
     // Returns the current throughput of the path
     float3 getCurrentThroughput();
@@ -31,25 +33,23 @@ interface IPathTracer {
 import payload;
 import bindings;
 
-struct BasicPathTracer<Scene : IScene> : IPathTracer {
+struct BasicPathTracer<_Scene : IScene> : IPathTracer {
     uint depth;
     float3 throughput;
     float3 position;
     float3 direction;
     float3 contribution;
 
+    typedef _Scene Scene;
+
     Scene scene;
 
-    __init(float3 initialThroughput, float3 position, float3 direction) {
+    __init(float3 initialThroughput, float3 position, float3 direction, Scene scene) {
         depth = 0;
         throughput = initialThroughput;
+        contribution = float3(0.0f);
         this.position = position;
         this.direction = direction;
-        contribution = float3(0.0f);
-    }
-
-    [[mutating]]
-    void setScene(Scene scene) {
         this.scene = scene;
     }
 
@@ -107,8 +107,9 @@ struct BasicPathTracer<Scene : IScene> : IPathTracer {
         }
 
         // Hit
-        const bool useGeomPosition = true;// distance(payload.wldPos, position) < (payload.hitT + payload.wldErrOffset * 2);
-        precise let hitPosition = useGeomPosition ? payload.wldPos : (position + direction * payload.hitT);
+        // const bool useGeomPosition = distance(payload.wldPos, position) < (payload.hitT + payload.wldErrOffset * 2);
+        // precise let hitPosition = useGeomPosition ? payload.wldPos : (position + direction * payload.hitT);
+        precise let hitPosition = payload.wldPos;
         precise let hitGeomNormal = payload.wldNormal;
         precise let hitGeomError = payload.wldErrOffset;
 
@@ -150,7 +151,7 @@ struct BasicPathTracer<Scene : IScene> : IPathTracer {
             bool shadowed = traceVisibilityRay(shadowRay);
 
             if (!shadowed) {
-                contribution += max(nanToNum(throughput * lightBsdf * lightRadiance / R.getProb()), 0.0);
+                contribution += max(nanToZero(throughput * lightBsdf * lightRadiance / R.getProb()), 0.0);
             }
         }
         // Emissive
@@ -163,7 +164,7 @@ struct BasicPathTracer<Scene : IScene> : IPathTracer {
         direction = wi;
 
         // Update throughput for next vertex
-        throughput = max(nanToNum(throughput * hitMaterial.evaluate(hitMaterialNormal, hitGeomNormal, wi, wo) / bsdfSamplePdf), 0.0);
+        throughput = max(nanToZero(throughput * hitMaterial.evaluate(hitMaterialNormal, hitGeomNormal, wi, wo) / bsdfSamplePdf), 0.0);
 
         return true;
     }

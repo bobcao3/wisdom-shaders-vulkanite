@@ -1,5 +1,6 @@
 import bindings;
 import scene.scene;
+import scene.PBRMinecraftScene;
 import math;
 import payload;
 import random.random;
@@ -40,14 +41,11 @@ void raygenMain() {
     const float3 target = lerp(lerp(gCameraInfo.corners[0], gCameraInfo.corners[2], screenPos.y), lerp(gCameraInfo.corners[1], gCameraInfo.corners[3], screenPos.y), screenPos.x);
     const float3 direction = mul(gCameraInfo.viewInverse, float4(normalize(target.xyz), 0.0)).xyz;
 
-    var pt = BasicPathTracer<PBRMinecraftScene>(float3(1.0), origin, direction);
-    pt.setScene(PBRMinecraftScene());
+    let scene = PBRMinecraftScene();
+    // let scene = VanillaMinecraftWorld();
+    // let scene = LambertGrayWorld(float3(0.5));
 
-    // var pt = BasicPathTracer<VanillaMinecraftWorld>(float3(1.0), origin, direction);
-    // pt.setScene(VanillaMinecraftWorld());
-
-    // var pt = BasicPathTracer<LambertGrayWorld>(float3(1.0), origin, direction);
-    // pt.setScene(LambertGrayWorld(float3(0.5)));
+    var pt = BasicPathTracer<PBRMinecraftScene>(float3(1.0), origin, direction, scene);
 
     for (int i = 0; i < 4; i++) {
         if (!pt.nextPathSegment(rng)) {

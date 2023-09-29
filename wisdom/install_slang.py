@@ -37,7 +37,7 @@ def main():
         raise Exception("unsupported platform")
 
     slang_path = f"https://github.com/shader-slang/slang/releases/download/{VERSION}/slang-{VERSION[1:]}-{suffix}.zip"
-    slang_install_path = Path.cwd() / "../bin/slang"
+    slang_install_path = Path.cwd() / "./bin/slang"
     slang_install_path.resolve()
     print("Installing slang to", slang_install_path)
     slang_install_path.mkdir(parents=True, exist_ok=True)
