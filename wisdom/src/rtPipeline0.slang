@@ -47,9 +47,14 @@ void raygenMain() {
 
     var pt = BasicPathTracer<PBRMinecraftScene>(float3(1.0), origin, direction, scene);
 
+    float primaryVertexDistance = 1e9;
+
     for (int i = 0; i < 4; i++) {
         if (!pt.nextPathSegment(rng)) {
             break;
+        }
+        if (i == 0) {
+            primaryVertexDistance = distance(pt.getCurrentPosition(), origin);
         }
         if (i > 0) {
             // Russian roulette
@@ -86,5 +91,6 @@ void raygenMain() {
         color = float3(step(50.0, lightLevel), step(240.0, lightLevel), step(254.0, lightLevel));
     }
 
-    gOutImage[launchIndex] = float4(color, 1.0);
+    gOutImage[0][launchIndex] = float4(color, 1.0);
+    gOutImage[3][launchIndex] = float4(primaryVertexDistance, 0.0, 0.0, 1.0);
 }

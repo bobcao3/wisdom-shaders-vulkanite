@@ -17,6 +17,8 @@ interface IPathTracer {
     [[mutating]]
     void adjustThroughput(float3 adjustment);
 
+    float3 getCurrentPosition();
+
     // Returns current ray depth
     uint getCurrentDepth();
 
@@ -60,6 +62,10 @@ struct BasicPathTracer<_Scene : IScene> : IPathTracer {
     [[mutating]]
     void adjustThroughput(float3 adjustment) {
         throughput *= adjustment;
+    }
+
+    float3 getCurrentPosition() {
+        return position;
     }
 
     uint getCurrentDepth() {

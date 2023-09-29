@@ -17,7 +17,7 @@ Sampler2D gBlockAtlasNormal;
 Sampler2D gBlockAtlasSpecular;
 
 [[vk::binding(6)]]
-RWTexture2D gOutImage;
+RWTexture2D gOutImage[16];
 
 [[vk::binding(0, 1)]]
 struct Geometries {
