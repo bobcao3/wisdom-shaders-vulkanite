@@ -1,10 +1,11 @@
 import payload;
+import math;
 import bindings;
 import scene.scene;
 import pathtracing.light;
 import pathtracing.bsdf;
 
-struct VanillaMinecraftWorld : IScene {
+struct VanillaMinecraftScene : IScene {
     typedef LambertianBSDF BSDF;
 
     DirectionalLight sunLight;

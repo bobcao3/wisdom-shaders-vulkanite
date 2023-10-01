@@ -1,11 +1,18 @@
+import encoding;
+
 struct MaterialRayPayload {
     float3 wldPos;
     float hitT;
-    float3 wldNormal;
     float wldErrOffset;
     uint geometryIndex;
     uint primitiveIndex;
     half2 barycentrics;
+
+    uint16_t2 encodedNormals;
+    property wldNormal : float3 {
+        get { return octahedronDecode(float2(encodedNormals) / 65535.0); }
+        set { encodedNormals = uint16_t2(octahedronEncode(newValue) * 65535.0); }
+    }
 };
 
 MaterialRayPayload getMaterialRayPayload() {

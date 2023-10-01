@@ -1,6 +1,7 @@
 import bindings;
 import scene.scene;
 import scene.PBRMinecraftScene;
+import scene.VanillaMinecraftScene;
 import math;
 import payload;
 import random.random;
@@ -41,11 +42,11 @@ void raygenMain() {
     const float3 target = lerp(lerp(gCameraInfo.corners[0], gCameraInfo.corners[2], screenPos.y), lerp(gCameraInfo.corners[1], gCameraInfo.corners[3], screenPos.y), screenPos.x);
     const float3 direction = mul(gCameraInfo.viewInverse, float4(normalize(target.xyz), 0.0)).xyz;
 
-    let scene = PBRMinecraftScene();
-    // let scene = VanillaMinecraftWorld();
+    // let scene = PBRMinecraftScene();
+    let scene = VanillaMinecraftScene();
     // let scene = LambertGrayWorld(float3(0.5));
 
-    var pt = BasicPathTracer<PBRMinecraftScene>(float3(1.0), origin, direction, scene);
+    var pt = BasicPathTracer<VanillaMinecraftScene>(float3(1.0), origin, direction, scene);
 
     float primaryVertexDistance = 1e9;
 
