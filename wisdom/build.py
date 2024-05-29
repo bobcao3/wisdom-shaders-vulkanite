@@ -3,6 +3,7 @@ import os
 import subprocess
 
 def compile_pipeline(compiler: Path, root: Path, src_path: Path, out_path: Path, entry_point: str = "computeMain", stage: str = "compute"):
+    print(f"Compiling {src_path}:{entry_point} to {out_path}")
     return subprocess.run([
             compiler,
             str(root / src_path),
@@ -50,6 +51,9 @@ def main():
         compile_raymiss(SLANGC, SRC_PATH, "traversal.slang", OUT_PATH / "ray0_0.rmiss")
         compile_ahit(SLANGC, SRC_PATH, "traversal.slang", OUT_PATH / "ray0_0.rahit")
         compile_chit(SLANGC, SRC_PATH, "traversal.slang", OUT_PATH / "ray0_0.rchit")
+        compile_raymiss(SLANGC, SRC_PATH, "traversal.slang", OUT_PATH / "ray0_1.rmiss")
+        compile_ahit(SLANGC, SRC_PATH, "traversal.slang", OUT_PATH / "ray0_1.rahit")
+        compile_chit(SLANGC, SRC_PATH, "traversal.slang", OUT_PATH / "ray0_1.rchit")
     except subprocess.CalledProcessError as e:
         print(e)
         exit(1)

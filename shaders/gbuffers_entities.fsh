@@ -1,1 +1,4 @@
-#include "/gbuffers/entities.fsh"
+#version 430 compatibility
+
+void main() {
+}

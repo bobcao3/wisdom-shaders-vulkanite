@@ -11,6 +11,7 @@ uniform int frameCounter;
 uniform sampler2D colortex0;
 uniform sampler2D colortex1;
 uniform sampler2D colortex2;
+uniform sampler2D colortex3;
 uniform sampler2D depthtex0;
 
 uniform mat4 gbufferProjectionInverse;
@@ -39,28 +40,32 @@ layout(location = 0) out vec4 fragColor;
 layout(location = 1) out vec4 prevOutput;
 layout(location = 2) out vec4 prevDepthOut;
 
-vec3 reproject(vec3 screenPos) {
+vec3 reproject(vec3 screenPos, float viewDist) {
     vec4 tmp = gbufferProjectionInverse * vec4(screenPos * 2.0 - 1.0, 1.0);
     vec3 viewPos = tmp.xyz / tmp.w;
+    viewPos = normalize(viewPos) * viewDist;
     vec3 playerPos = (gbufferModelViewInverse * vec4(viewPos, 1.0)).xyz;
     vec3 worldPos = playerPos + cameraPosition;
     vec3 prevPlayerPos = worldPos - previousCameraPosition;
     vec3 prevViewPos = (gbufferPreviousModelView * vec4(prevPlayerPos, 1.0)).xyz;
+    float prevViewDist = length(prevViewPos);
     vec4 prevClipPos = gbufferPreviousProjection * vec4(prevViewPos, 1.0);
-    return prevClipPos.xyz / prevClipPos.w * 0.5 + 0.5;
+    return vec3(prevClipPos.xy / prevClipPos.w * 0.5 + 0.5, prevViewDist);
 }
 
 void main() {
-    vec3 screenPos = vec3(texCoord, texture(depthtex0, texCoord).x);
+    float rtDist = texture(colortex3, texCoord).r;
+    vec3 screenPos = vec3(texCoord, 1.0);
+    // vec3 screenPos = vec3(texCoord, texture(depthtex0, texCoord).x);
     vec4 currColor = texture(colortex0, texCoord);
     vec4 newColor;
     #if ACCUMULATION_TYPE == 0
         vec4 prevColor = texture(colortex1, texCoord);
         newColor = mix(prevColor, currColor, 1.0 / float(frameCounter));
     #elif ACCUMULATION_TYPE == 1
-        vec3 prevScreenPos = reproject(screenPos);
+        vec3 prevScreenPos = reproject(screenPos, rtDist);
         float prevDepth = texture(colortex2, prevScreenPos.xy).x;
-        if (abs(linearizeDepth(prevScreenPos.z, near, far) - linearizeDepth(prevDepth, near, far)) > 0.1) {
+        if (abs(prevScreenPos.z - prevDepth) > 0.1) {
             newColor = currColor;
             newColor.a = 1.0;
         } else if (clamp(prevScreenPos.xy, 0.0, 1.0) != prevScreenPos.xy) {
@@ -79,6 +84,6 @@ void main() {
     }
 
     prevOutput = newColor;
-    prevDepthOut = vec4(screenPos.z);
+    prevDepthOut = vec4(rtDist);
     fragColor = newColor;
 }

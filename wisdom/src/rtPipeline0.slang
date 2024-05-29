@@ -18,15 +18,6 @@ MaterialRayPayload traceMaterialRay(in RayDesc ray) {
     return primaryPayload;
 }
 
-bool traceVisibilityRay(in RayDesc ray) {
-    MaterialRayPayload payload = getShadowRayPayload();
-
-    const uint rayFlags = RAY_FLAG_CULL_BACK_FACING_TRIANGLES | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH;
-    TraceRay(gAccelerationStructure, rayFlags, 0xFF, 0, 0, 0, ray, payload);
-
-    return payload.hitT > 0.0;
-}
-
 [shader("raygeneration")]
 void raygenMain() {
     const uint2 launchIndex = DispatchRaysIndex().xy;
