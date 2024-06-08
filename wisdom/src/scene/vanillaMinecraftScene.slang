@@ -50,6 +50,15 @@ struct VanillaMinecraftScene : IScene {
     }
 
     BSDF getHitMaterial(MaterialRayPayload payload, out float3 shadingNormal, out float3 emission) {
+        if (payload.hitType == 1) {
+            let hitQuad = gGeometries.getEntityQuad(payload.geometryIndex, payload.primitiveIndex);
+            let hitFragInfo = hitQuad.getFragmentInfo(payload.barycentrics, payload.primitiveIndex);
+            let albedo = hitFragInfo.color.xyz * float3(0.7);
+            shadingNormal = payload.wldNormal;
+            // emission = hitFragInfo.lightUV.r > 239.5 ? float3(albedo) : float3(0.0);
+            emission = float3(0.0);
+            return LambertianBSDF(albedo);
+        }
         let hitQuad = gGeometries.getQuad(payload.geometryIndex, payload.primitiveIndex);
         let hitFragInfo = hitQuad.getFragmentInfo(payload.barycentrics, payload.primitiveIndex);
         let albedo = hitFragInfo.color.xyz * gBlockAtlas.Sample(hitFragInfo.uv).xyz;

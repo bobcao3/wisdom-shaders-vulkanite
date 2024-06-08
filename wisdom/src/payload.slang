@@ -13,6 +13,8 @@ struct MaterialRayPayload {
         get { return octahedronDecode(float2(encodedNormals) / 65535.0); }
         set { encodedNormals = uint16_t2(octahedronEncode(newValue) * 65535.0); }
     }
+
+    uint16_t hitType;
 };
 
 MaterialRayPayload getMaterialRayPayload() {

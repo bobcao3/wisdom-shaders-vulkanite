@@ -21,10 +21,16 @@ RWTexture2D gOutImage[16];
 
 [[vk::binding(0, 1)]]
 struct Geometries {
-    RWStructuredBuffer<EncodedQuad> gQuadBuffers[];
+    ByteAddressBuffer gQuadBuffers[];
 
     EncodedQuad getQuad(uint sectionIndex, uint primId) {
-        return gQuadBuffers[NonUniformResourceIndex(sectionIndex)][primId >> 1];
+        uint address = (primId >> 1) * sizeof(EncodedQuad);
+        return gQuadBuffers[NonUniformResourceIndex(sectionIndex)].Load<EncodedQuad>(address);
+    }
+
+    EncodedQuadEntities getEntityQuad(uint sectionIndex, uint primId) {
+        uint address = (primId >> 1) * sizeof(EncodedQuadEntities);
+        return gQuadBuffers[NonUniformResourceIndex(sectionIndex)].Load<EncodedQuadEntities>(address);
     }
 } gGeometries;
 

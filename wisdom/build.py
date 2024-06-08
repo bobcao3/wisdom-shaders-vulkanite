@@ -51,9 +51,8 @@ def main():
         compile_raymiss(SLANGC, SRC_PATH, "traversal.slang", OUT_PATH / "ray0_0.rmiss")
         compile_ahit(SLANGC, SRC_PATH, "traversal.slang", OUT_PATH / "ray0_0.rahit")
         compile_chit(SLANGC, SRC_PATH, "traversal.slang", OUT_PATH / "ray0_0.rchit")
-        compile_raymiss(SLANGC, SRC_PATH, "traversal.slang", OUT_PATH / "ray0_1.rmiss")
-        compile_ahit(SLANGC, SRC_PATH, "traversal.slang", OUT_PATH / "ray0_1.rahit")
-        compile_chit(SLANGC, SRC_PATH, "traversal.slang", OUT_PATH / "ray0_1.rchit")
+        compile_ahit(SLANGC, SRC_PATH, "traversalEntity.slang", OUT_PATH / "ray0_1.rahit")
+        compile_chit(SLANGC, SRC_PATH, "traversalEntity.slang", OUT_PATH / "ray0_1.rchit")
     except subprocess.CalledProcessError as e:
         print(e)
         exit(1)

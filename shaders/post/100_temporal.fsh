@@ -65,7 +65,7 @@ void main() {
     #elif ACCUMULATION_TYPE == 1
         vec3 prevScreenPos = reproject(screenPos, rtDist);
         float prevDepth = texture(colortex2, prevScreenPos.xy).x;
-        if (abs(prevScreenPos.z - prevDepth) > 0.1) {
+        if (abs(prevScreenPos.z - prevDepth) / prevDepth > 0.1) {
             newColor = currColor;
             newColor.a = 1.0;
         } else if (clamp(prevScreenPos.xy, 0.0, 1.0) != prevScreenPos.xy) {

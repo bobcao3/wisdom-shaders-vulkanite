@@ -12,10 +12,10 @@ void closesthitMain(inout MaterialRayPayload payload, in BuiltInTriangleIntersec
     payload.hitT = RayTCurrent();
     payload.geometryIndex = InstanceID() + GeometryIndex();
     payload.primitiveIndex = PrimitiveIndex();
-    payload.hitType = 0;
+    payload.hitType = 1;
     payload.barycentrics = half2(attr.barycentrics);
 
-    let quad = gGeometries.getQuad(InstanceID() + GeometryIndex(), PrimitiveIndex());
+    let quad = gGeometries.getEntityQuad(InstanceID() + GeometryIndex(), PrimitiveIndex());
     precise float3 v0, v1, v2;
     quad.getPositions(PrimitiveIndex(), v0, v1, v2);
 
@@ -45,6 +45,8 @@ void closesthitMain(inout MaterialRayPayload payload, in BuiltInTriangleIntersec
                     mad(o2w._m20, objPosition.x,
                         mad(o2w._m21, objPosition.y,
                             (o2w._m22 * objPosition.z)));
+
+    // wldPosition = objPosition;
 
     const float3x4 w2o = WorldToObject3x4();
 
@@ -90,13 +92,16 @@ void closesthitMain(inout MaterialRayPayload payload, in BuiltInTriangleIntersec
     wldOffset = mad(wldScale, objOffset, wldOffset);
 
     payload.wldErrOffset = wldOffset;
+
+    payload.wldErrOffset = 1e-3;
 }
 
 [shader("anyhit")]
 void anyhitMain(inout MaterialRayPayload payload, in BuiltInTriangleIntersectionAttributes attr) {
-    let quad = gGeometries.getQuad(InstanceID() + GeometryIndex(), PrimitiveIndex());
+    let quad = gGeometries.getEntityQuad(InstanceID() + GeometryIndex(), PrimitiveIndex());
     let uv = quad.getFragmentUV(attr.barycentrics, PrimitiveIndex());
-    float alpha = gBlockAtlas.Sample(uv).a;
+    // float alpha = gBlockAtlas.Sample(uv).a;
+    float alpha = 1.0;
     if (alpha < 0.05) {
         IgnoreHit();
     }

@@ -57,7 +57,7 @@ void main() {
         fragColor.rgb = texture(colortex9, texCoord).rgb;
     }
 
-    // fragColor.rgb = vec3(max(rtDist - dist, 0.0));
+    // fragColor.rgb = vec3(1.0 / rtDist);
 }
 
 //#endif
